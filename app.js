@@ -34,3 +34,103 @@ const item3 = new Item({
 })
 
 const defaultItems = [item1, item2, item3];
+
+
+
+//For any other routes
+const listSchema = {
+    name: String,
+    items: [itemSchema] //Embedde with an array of itemSchema //i.e defaultItems is array of listSchema
+}
+
+const List = mongoose.model("List", listSchema);
+
+
+
+
+app.get("/", function (req, res) {
+
+    Item.find({}, function (err, foundItems) {
+        if (foundItems.length === 0) {
+            Item.insertMany(defaultItems, function (err) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log("Successfully updated default items");
+                }
+            });
+
+            res.redirect("/");
+
+        } else {
+            res.render("list", { listTitle: "MyToDoList", newItems: foundItems });
+        }
+
+    })
+});
+
+
+
+
+//Add new item :
+app.post("/", function (req, res) {
+
+
+    const itemName = req.body.newWork;
+    const listName = req.body.list;
+
+    const item = new Item({
+        name: itemName
+    });
+
+    if (listName === "MyToDoList") {
+        item.save();
+        res.redirect("/");
+    } else {
+        //Find the list and the new item to it.
+        List.findOne({ name: listName }, function (err, foundList) {
+            foundList.items.push(item);  //Here we are using push method of Java Script.
+            foundList.save();
+            res.redirect("/" + listName);
+        });
+    }
+});
+
+
+
+
+//Access to other routes
+
+
+
+
+
+
+
+app.post("/delete", function (req, res) {
+    const checkedItemId = req.body.checkbox;
+    const listName=req.body.listName;
+
+    if(listName==="MyToDoList"){
+        Item.findByIdAndRemove(checkedItemId, function (err) {
+            if (!err) {
+                console.log("Successfully deleted item");
+                res.redirect("/");
+            }
+        });
+    }else{
+        List.findOneAndUpdate({name:listName},{$pull :{items :{_id:checkedItemId}}},function(err,foundList){
+            if(!err){
+                res.redirect("/"+listName);
+            }
+        });
+    }
+
+
+    
+});
+
+
+app.listen(3000, function (req, res) {
+    console.log("Server starting at port 3000");
+});
