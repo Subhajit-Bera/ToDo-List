@@ -100,7 +100,31 @@ app.post("/", function (req, res) {
 
 
 //Access to other routes
+//Creating custom list
+app.get("/:customListName", function (req, res) {
+    const customListName = _.capitalize(req.params.customListName);
 
+    //Here foundList is a list not an array so we check if it's exist(!foundList)
+    //instead of checking it's length.
+
+    List.findOne({ name: customListName }, function (err, foundList) {
+        if (!err) {
+            if (!foundList) {
+                const list = new List({
+                    name: customListName,
+                    items: defaultItems
+                })
+                list.save();
+                res.redirect("/" + customListName);
+            } else {
+                //List is already exis so render the list.
+                res.render("list", { listTitle: foundList.name, newItems: foundList.items });
+            }
+        }
+    });
+
+
+})
 
 
 
